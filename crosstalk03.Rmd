@@ -1,0 +1,124 @@
+---
+title: "Crosstalk"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    source_code: embed
+    social: [ "twitter", "facebook", "menu" ]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(leaflet)
+library(DT)
+library(plotly)
+library(crosstalk)
+library(rgdal)
+library(rgeos)
+```
+
+```{r data}
+# load example data
+df <- read_csv("example.csv")
+
+# clean example data
+df <- 
+  df %>% 
+    filter(!is.na(officer)) %>% 
+    filter(status != "Not a Prospect") %>% 
+    select(name, class, constituency, connection, status,  priority, cap16, officer, latitude, longitude)
+
+# Wrap data in SharedData to use with crosstalk
+sd <- SharedData$new(df)
+```
+
+
+Inputs {.sidebar}
+-------------------------------------
+
+```{r filters}
+# Filter input - Officer
+filter_select(id = "officer", 
+              label = "Select Gift Officer(s)",
+              sharedData = sd, 
+              group = ~officer)
+
+# Filter input - Status
+filter_select(id = "status", 
+              label = "Select Status",
+              sharedData = sd, 
+              group = ~status)
+
+
+# Filter checkbox - constituency
+filter_checkbox(id = "cons", 
+                label = "Constituency",
+                sharedData = sd, 
+                group = ~constituency,
+                inline = TRUE)
+
+# Filter slider - capital giving 2016
+filter_slider(id = "giving", 
+              label = "2016 Giving",
+              sharedData = sd, 
+              column = ~cap16)
+```
+
+
+Row
+-------------------------------------
+
+### Map
+
+```{r map_prep, include=FALSE}
+# mapping polygons 
+wealth_zips <- readRDS("wealthiest_100_zipcodes.RDS")
+```
+
+```{r map}
+
+# mapping polygons 
+wealth_zips <- readRDS("wealthiest_100_zipcodes.RDS") # data created from 15zpallnoagi.csv and cb_2014_us_zcta510_500k.shp
+
+sd %>% 
+  leaflet() %>% 
+    addProviderTiles("CartoDB") %>% 
+    addCircleMarkers(popup = ~name, group = "Prospects", radius = 2) %>% 
+    addPolygons(data=wealth_zips,
+                fillColor = "Green",
+                weight = 2,
+                opacity = 1,
+                color = "Green",
+                dashArray = "3",
+                fillOpacity = .7,
+                group = "Boundaries") %>% 
+  addLayersControl(
+    overlayGroups = c("Prospects", "Boundaries"))
+```
+
+### Chart 
+
+```{r plot}
+plot_ly(sd, x = ~status) %>% add_histogram()
+```
+
+Row
+-------------------------------------
+
+### Table
+
+```{r table}
+datatable(sd, extensions= c('Buttons', "Scroller"), 
+          class="compact", width="100%", rownames = FALSE, 
+            options=list(
+              dom = 'Blfrtip',
+              deferRender=TRUE, 
+              scrollY=300,
+              scroller=TRUE, 
+              columnDefs = list(list(visible=FALSE, targets=c(8, 9))), 
+              buttons = list(I('colvis'), 'csv', 'excel'))) %>% 
+formatCurrency('cap16', digits = 0)  
+```
+

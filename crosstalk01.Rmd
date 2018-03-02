@@ -1,0 +1,67 @@
+---
+title: "Independent Widgets"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    source_code: embed
+    social: [ "twitter", "facebook", "menu" ]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(leaflet)
+library(DT)
+library(plotly)
+
+```
+
+```{r data}
+# load example data
+df <- read_csv("example.csv")
+
+# clean example data
+df <- 
+  df %>% 
+    filter(!is.na(officer)) %>% 
+    filter(status != "Not a Prospect") %>% 
+    select(name, class, constituency, connection, status,  priority, cap16, officer, latitude, longitude)
+```
+
+Row
+-------------------------------------
+
+### Map
+
+```{r map}
+df %>% 
+  leaflet() %>% 
+    addProviderTiles("CartoDB") %>% 
+    addCircleMarkers(popup = ~name)
+```
+
+### Chart 
+
+```{r plot}
+plot_ly(df, x = ~status) %>% add_histogram()
+```
+
+Row
+-------------------------------------
+
+### Table
+
+```{r table}
+datatable(df, extensions= c('Buttons', "Scroller"), 
+          class="compact", width="100%", rownames = FALSE, 
+            options=list(
+              dom = 'Blfrtip',
+              deferRender=TRUE, 
+              scrollY=300,
+              scroller=TRUE, 
+              columnDefs = list(list(visible=FALSE, targets=c(8, 9))), 
+              buttons = list(I('colvis'), 'csv', 'excel'))) %>% 
+formatCurrency('cap16', digits = 0)  
+```
+

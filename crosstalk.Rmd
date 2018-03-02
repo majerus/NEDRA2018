@@ -1,0 +1,106 @@
+---
+title: "Crosstalk"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+---
+
+```{r setup, include=FALSE}
+
+# notes 
+  # https://rstudio.github.io/crosstalk
+
+# to do
+  # color by status
+  # more filters
+  # 100 zips
+
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(leaflet)
+library(DT)
+library(crosstalk)
+library(flexdashboard)
+library(plotly)
+```
+
+```{r data}
+# load example data
+df <- read_csv("example.csv")
+
+# clean example data
+df <- 
+  df %>% 
+    filter(!is.na(officer)) %>% 
+    select(name, class, status, officer, latitude, longitude)
+
+# Wrap data in SharedData to use with crosstalk
+sd <- SharedData$new(df)
+```
+
+
+Inputs {.sidebar}
+-------------------------------------
+
+```{r filters}
+
+# Filter input - Officer
+filter_select(id = "officer", 
+              label = "Select Gift Officer(s)",
+              sharedData = sd, 
+              group = ~officer)
+
+# Filter input - Status
+filter_select(id = "status", 
+              label = "Select Status",
+              sharedData = sd, 
+              group = ~status)
+
+# Filter checkbox - constituency
+filter_checkbox(id = "cons", 
+                label = "Constituency",
+                sharedData = sd, 
+                group = ~constituency,
+                inline = TRUE)
+```
+
+
+Row
+-------------------------------------
+
+### Map
+
+```{r map}
+
+# Use SharedData like a dataframe with Crosstalk-enabled widgets
+# for to layout in cols use: bscols()
+
+sd %>% 
+  leaflet() %>% 
+    addTiles() %>% 
+    addCircleMarkers(popup = ~name)
+
+```
+
+### Chart 
+
+```{r plot}
+
+plot_ly(sd, x = ~status) %>% add_histogram()
+
+```
+
+
+Row
+-------------------------------------
+
+### Table
+
+```{r table}
+
+datatable(sd, extensions="Scroller", style="bootstrap", class="compact", width="100%",
+            options=list(deferRender=TRUE, scrollY=300, scroller=TRUE))
+
+```
+
