@@ -1,5 +1,5 @@
 ---
-title: "Crosstalk"
+title: "Crosstalk + Layers"
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
@@ -8,6 +8,10 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+# crosstalk03
+  # adds layer of zipcode boundaries of zips with mean income >= $200k
+
+
 knitr::opts_chunk$set(echo = FALSE)
 
 library(tidyverse)
@@ -17,11 +21,12 @@ library(plotly)
 library(crosstalk)
 library(rgdal)
 library(rgeos)
+
 ```
 
 ```{r data}
 # load example data
-df <- read_csv("example.csv")
+df <- read_csv("https://raw.githubusercontent.com/majerus/NEDRA2018/master/example.csv")
 
 # clean example data
 df <- 
@@ -74,19 +79,17 @@ Row
 
 ```{r map_prep, include=FALSE}
 # mapping polygons 
-wealth_zips <- readRDS("wealthiest_100_zipcodes.RDS")
+# load geojson for zipcodes with mean income of $200k+
+wealthy_zips <- readOGR("https://raw.githubusercontent.com/majerus/NEDRA2018/master/wealthiest_zipcodes_geojson.GeoJSON", "OGRGeoJSON")
 ```
 
 ```{r map}
-
-# mapping polygons 
-wealth_zips <- readRDS("wealthiest_100_zipcodes.RDS") # data created from 15zpallnoagi.csv and cb_2014_us_zcta510_500k.shp
-
 sd %>% 
   leaflet() %>% 
     addProviderTiles("CartoDB") %>% 
+  setView(lat = 39.8282, lng = -98.5795, zoom = 4) %>% 
     addCircleMarkers(popup = ~name, group = "Prospects", radius = 2) %>% 
-    addPolygons(data=wealth_zips,
+    addPolygons(data=wealthy_zips,
                 fillColor = "Green",
                 weight = 2,
                 opacity = 1,
@@ -95,7 +98,7 @@ sd %>%
                 fillOpacity = .7,
                 group = "Boundaries") %>% 
   addLayersControl(
-    overlayGroups = c("Prospects", "Boundaries"))
+    overlayGroups = c("Prospects", "Boundaries")) 
 ```
 
 ### Chart 
