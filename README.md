@@ -1,6 +1,9 @@
 # NEDRA2018
 2018 NEDRA Conference Presentation
 
+## Slides
+* http://slides.com/richmajerus/nedra2018
+
 ## Reports
 * *crosstalk01* - create dashboard with a table, chart, and map using the **same data**
   * http://rpubs.com/richmajerus/367073
