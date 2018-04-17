@@ -1,0 +1,109 @@
+---
+title: '`r paste("Gift Officer Report:", i)`'
+date: '`r Sys.Date()`'
+output: pdf_document
+classoption: landscape
+geometry: top=2cm, bottom=2cm, left=1cm, right=1cm
+tables: yes
+---
+
+\pagenumbering{gobble}
+
+```{r setup, include=FALSE}
+
+# set options for all chunks
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+
+# load libraries
+library(tidyverse)
+library(gridExtra)
+library(scales)
+library(knitr)
+library(stringr)
+
+# run for a single lgo 
+# i <- sample_n(example_df, 1)[, "officer"]
+
+tmp <- 
+example_df %>% 
+  filter(officer == i)
+
+```
+
+```{r map}
+map_df <-
+  tmp %>% 
+    group_by(state) %>% 
+    summarise(Prospects = n(),
+              Percent = percent(Prospects/nrow(tmp)))
+
+us <- map_data("state")
+
+m <- 
+ggplot() +
+  geom_map(data = us, map = us,
+           aes(x=long, y=lat, map_id=region),
+           fill="white", color="grey", size=0.15) +
+  geom_map(data = map_df, map = us, 
+           aes(fill = Prospects, map_id = state),
+           color = "#ffffff", size = 0.15) +
+  labs(x = NULL, y = NULL) +
+  coord_map("albers", lat0 = 39, lat1 = 45) +
+  theme(panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        legend.position = "bottom")
+
+```
+
+```{r graph, fig.width=10, fig.align='center'}
+g <- 
+  tmp %>% 
+  group_by(status) %>% 
+  count %>%
+  ungroup %>% 
+  mutate(status = factor(status, levels = status[order(n)])) %>% 
+  ggplot(., aes(x = status, y = n)) + 
+    geom_bar(fill = "#2c528e", stat = "identity") + 
+    labs(x = "", y = "") +
+    theme(legend.position = "bottom", 
+          panel.background = element_blank()) +
+  coord_flip()
+
+grid.arrange(m, g, nrow = 1)
+
+```
+
+
+```{r tables, results='asis'}
+# prospects by status table
+t1 <-
+  tmp %>% 
+    rename(Status = status) %>% 
+    group_by(Status) %>% 
+    summarise(Prospects = n(),
+           Percent = percent(Prospects/nrow(tmp))) %>% 
+    mutate(Prospects = prettyNum(Prospects, big.mark = ","))
+
+t2 <- 
+  map_df %>% 
+    ungroup() %>% 
+    arrange(desc(Prospects)) %>% 
+    slice(1:7) %>% 
+    mutate(Prospects = prettyNum(Prospects, big.mark = ",")) %>% 
+    mutate(state = str_to_title(state)) %>% 
+    rename(State = state) 
+
+    cat('\\vspace{1 cm}')
+    cat('\\begin{center}')
+    cat('\\begin{tabular}{ c c }')
+    print(knitr::kable(t2, format = 'latex', booktabs = TRUE))
+    cat('\\hspace{8 cm}')
+    print(knitr::kable(t1, format = 'latex', booktabs = TRUE))
+    cat('\\end{tabular}')
+    cat('\\end{center}')
+
+
+```
+
