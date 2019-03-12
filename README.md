@@ -1,5 +1,5 @@
-# NEDRA2018
-2018 NEDRA Conference Presentation
+# Conferences
+2018 NEDRA Conference Presentation, 2019 DRIVE, Springboard 2019, etc. 
 
 ## Slides
 * Conference: http://slides.com/richmajerus/nedra2018
