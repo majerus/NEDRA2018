@@ -4,7 +4,7 @@ set.seed(2)
 
 library(randomNames)
 library(zipcode)
-library(tudyverse)
+library(tidyverse)
 
 data("zipcode")
 
